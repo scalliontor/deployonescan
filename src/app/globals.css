@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body { background: #070912; color: #e6e9f2; }
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-medium transition;
+  }
+  .btn-primary {
+    @apply btn bg-accent-500 text-ink-950 hover:bg-accent-400 shadow-glow;
+  }
+  .btn-ghost {
+    @apply btn border border-white/10 text-white/80 hover:bg-white/5 hover:text-white;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70;
+  }
+  .card {
+    @apply rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur;
+  }
+}
+
+.bg-hero {
+  background:
+    radial-gradient(800px 400px at 20% 0%, rgba(62, 226, 165, 0.18), transparent 60%),
+    radial-gradient(700px 400px at 90% 20%, rgba(255, 182, 80, 0.12), transparent 60%),
+    #070912;
+}
+
+/* Hide scrollbars on the viewer overlay */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

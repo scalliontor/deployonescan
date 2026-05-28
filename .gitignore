@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.DS_Store
+*.log
+.vercel
+.data/
+# We do commit public/splats/sample.ksplat (~4 MB) so Vercel deploys work.
+# Larger / production splats should be hosted externally (R2 / S3).
