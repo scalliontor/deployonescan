@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { fetchAndCleanSplat, type CleanupOptions } from "@/lib/splat-cleanup";
 
 type Props = {
   splatUrl: string;
   className?: string;
   onReady?: () => void;
+  /** Override cleanup defaults from parent (e.g., from a "View options" UI). */
+  cleanup?: CleanupOptions;
 };
 
 type LogLine = { level: "info" | "warn" | "error"; text: string; t: number };
@@ -27,7 +30,7 @@ const CAMERA_PRESETS: Array<{
   { name: "wide", cameraUp: [0, 1, 0], position: [4, 4, 12], lookAt: [0, 0, 0] },
 ];
 
-export function SplatViewer({ splatUrl, className, onReady }: Props) {
+export function SplatViewer({ splatUrl, className, onReady, cleanup }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,20 +69,30 @@ export function SplatViewer({ splatUrl, className, onReady }: Props) {
       }
       log("info", `WebGL2 OK · MAX_TEXTURE_SIZE=${gl2.getParameter(gl2.MAX_TEXTURE_SIZE)}`);
 
-      // 2. Pre-fetch the splat to detect 404 / network error early
+      // 2. Fetch + auto-clean the splat (removes floaters / background bleed
+      // / oversized gaussians) before passing to the library. The library
+      // receives a blob URL — no extra HTTP request, parser sees a clean file.
+      let loadUrl = splatUrl;
+      let cleanupBlobUrl: string | null = null;
       try {
-        const res = await fetch(splatUrl, { method: "HEAD" });
-        if (!res.ok) {
-          const err = `Splat fetch failed: HTTP ${res.status} for ${splatUrl}`;
-          log("error", err);
-          setError(err);
-          return;
-        }
-        const sz = res.headers.get("content-length");
-        const ct = res.headers.get("content-type");
-        log("info", `splat HEAD OK · size=${sz}B · type=${ct}`);
+        const cleaned = await fetchAndCleanSplat(splatUrl, cleanup);
+        loadUrl = cleaned.url;
+        cleanupBlobUrl = cleaned.url;
+        // Stash on ref so cleanup function can revoke it
+        (viewerRef as any).__cleanupBlobUrl = cleaned.url;
+        const s = cleaned.stats;
+        log(
+          "info",
+          `cleanup: ${s.inputCount}→${s.outputCount} splats ` +
+            `(α ${(s.droppedAlphaPct * 100).toFixed(1)}%, ` +
+            `scale ${(s.droppedScalePct * 100).toFixed(1)}%, ` +
+            `crop ${(s.droppedCropPct * 100).toFixed(1)}%) in ${s.elapsedMs.toFixed(0)}ms`
+        );
       } catch (e: any) {
-        log("error", `splat HEAD threw: ${e?.message || e}`);
+        const err = `splat fetch/clean failed: ${e?.message || e}`;
+        log("error", err);
+        setError(err);
+        return;
       }
 
       // 3. Load the splat library
@@ -131,11 +144,12 @@ export function SplatViewer({ splatUrl, className, onReady }: Props) {
         return;
       }
 
-      // 5. Add splat scene. Alpha threshold MUST be 0 for antimatter15
-      // .splat files (their alpha encoding differs from KSplat); higher
-      // thresholds silently cull every splat → blank scene.
+      // 5. Add splat scene (using cleaned blob URL from step 2).
+      // Alpha threshold MUST be 0 for antimatter15 .splat files (their alpha
+      // encoding differs from KSplat); higher thresholds silently cull every
+      // splat → blank scene.
       try {
-        await viewer.addSplatScene(splatUrl, {
+        await viewer.addSplatScene(loadUrl, {
           splatAlphaRemovalThreshold: 0,
           showLoadingUI: true,
           progressiveLoad: false,
@@ -269,6 +283,14 @@ export function SplatViewer({ splatUrl, className, onReady }: Props) {
         viewer?.dispose?.();
       } catch {}
       viewerRef.current = null;
+      // Free the cleaned-splat blob if we made one
+      try {
+        // captured in closure via boot() inner scope; expose via a ref-like
+        // pattern using the viewer ref's __cleanupBlobUrl marker
+        const url = (viewerRef as any).__cleanupBlobUrl;
+        if (url) URL.revokeObjectURL(url);
+        (viewerRef as any).__cleanupBlobUrl = null;
+      } catch {}
       if (hostRef.current) {
         while (hostRef.current.firstChild) {
           hostRef.current.removeChild(hostRef.current.firstChild);
@@ -276,7 +298,7 @@ export function SplatViewer({ splatUrl, className, onReady }: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [splatUrl, presetIdx, reloadKey]);
+  }, [splatUrl, presetIdx, reloadKey, cleanup]);
 
   const cyclePreset = () => {
     setLoaded(false);
