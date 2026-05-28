@@ -9,3 +9,4 @@ out/
 .data/
 # We do commit public/splats/sample.ksplat (~4 MB) so Vercel deploys work.
 # Larger / production splats should be hosted externally (R2 / S3).
+*.tsbuildinfo
