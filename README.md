@@ -8,15 +8,19 @@ provider drives the full upload flow against a bundled sample scene.
 ## Quick start (local)
 
 ```bash
+git clone https://github.com/scalliontor/Onescan.git
+cd Onescan
 npm install
 cp .env.example .env
 npm run dev
 # → http://localhost:3000
 ```
 
-The sample 3D scene is committed (`public/splats/sample.ksplat`, ~4 MB).
-If you want to swap it for a different scene, drop any `.ksplat` / `.splat`
-/ `.ply` at the same path.
+3 sample 3DGS scenes are bundled in `public/splats/` (`room.splat` 49 MB
+interior · `nike.splat` 8.3 MB · `plush.splat` 8.6 MB).
+
+**👉 For a full setup walkthrough on a fresh machine — including
+Vercel deploy, LAN hosting, and troubleshooting — see [USAGE.md](USAGE.md).**
 
 ## Deploy to Vercel
 
@@ -80,11 +84,12 @@ your RTX 5070 Ti).
 
 ## Strategy docs (read in this order)
 
-1. [BUSINESS.md](BUSINESS.md) — *why* (market, monetization, competitors, unit economics)
-2. [IP-MOAT.md](IP-MOAT.md) — *what we actually invent* (algorithms vs gluing OSS)
-3. [SELF-HOST.md](SELF-HOST.md) — *plumbing* (pipeline, GPU options, costs to swap off Luma)
-4. [PLAN-LOCAL-WORKER.md](PLAN-LOCAL-WORKER.md) — *implementation plan* for the self-host worker
-5. [DEPLOY.md](DEPLOY.md) — *operations* (Vercel deploy)
+1. [USAGE.md](USAGE.md) — *how to use* (setup, deploy, troubleshoot — start here)
+2. [BUSINESS.md](BUSINESS.md) — *why* (market, monetization, competitors, unit economics)
+3. [IP-MOAT.md](IP-MOAT.md) — *what we actually invent* (algorithms vs gluing OSS)
+4. [SELF-HOST.md](SELF-HOST.md) — *plumbing* (pipeline, GPU options, costs to swap off Luma)
+5. [PLAN-LOCAL-WORKER.md](PLAN-LOCAL-WORKER.md) — *implementation plan* for the self-host worker
+6. [DEPLOY.md](DEPLOY.md) — *operations* (Vercel deploy)
 
 ## Roadmap
 
